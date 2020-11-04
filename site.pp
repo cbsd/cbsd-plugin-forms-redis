@@ -1,5 +1,17 @@
 # my_module_dir variable define in puppet script
 
+# Linux required -i'', not "-i ''" for inplace
+os=$( uname -s )
+case "${os}" in
+	Linux)
+		# Linux require -i'', not -i ' '
+		sed_delimer=
+		;;
+	FreeBSD)
+		sed_delimer=" "
+		;;
+esac
+
 generate_manifest()
 {
 	local my_common_yaml="${my_module_dir}/site-tpl.pp"
@@ -12,7 +24,7 @@ generate_manifest()
 		for i in ${param}; do
 			eval _val=\${${i}}
 			_tpl="#${i}#"
-			sed -i '' -Ees:${_tpl}:${_val}:g ${tmp_common_yaml}
+			sed -i${sed_delimer}'' -Ees:${_tpl}:${_val}:g ${tmp_common_yaml}
 		done
 		cat ${tmp_common_yaml}
 	else
@@ -38,7 +50,7 @@ generate_hieradata()
 		for i in ${param}; do
 			eval _val=\${${i}}
 			_tpl="#${i}#"
-			sed -i '' -Ees:${_tpl}:${_val}:g ${tmp_common_yaml}
+			sed -i${sed_delimer}'' -Ees:${_tpl}:${_val}:g ${tmp_common_yaml}
 		done
 		cat ${tmp_common_yaml}
 	else

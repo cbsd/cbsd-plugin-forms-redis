@@ -1,6 +1,6 @@
 #!/bin/sh
 MYDIR="$( /usr/bin/dirname $0 )"
-MYPATH="$( /bin/realpath ${MYDIR} )"
+FORM_PATH="$( /bin/realpath ${MYDIR} )"
 HELPER="redis"
 
 : ${distdir="/usr/local/cbsd"}
@@ -17,14 +17,14 @@ set -e
 . ${subr}
 set +e
 
-MYPATH="${workdir}/formfile"
+FORM_PATH="${workdir}/formfile"
 
-[ ! -d "${MYPATH}" ] && err 1 "No such ${MYPATH}"
-[ -f "${MYPATH}/${HELPER}.sqlite" ] && /bin/rm -f "${MYPATH}/${HELPER}.sqlite"
+[ ! -d "${FORM_PATH}" ] && err 1 "No such ${FORM_PATH}"
+[ -f "${FORM_PATH}/${HELPER}.sqlite" ] && /bin/rm -f "${FORM_PATH}/${HELPER}.sqlite"
 
-/usr/local/bin/cbsd ${miscdir}/updatesql ${MYPATH}/${HELPER}.sqlite /usr/local/cbsd/share/forms.schema forms
+/usr/local/bin/cbsd ${miscdir}/updatesql ${FORM_PATH}/${HELPER}.sqlite /usr/local/cbsd/share/forms.schema forms
 
-/usr/local/bin/sqlite3 ${MYPATH}/${HELPER}.sqlite << EOF
+${SQLITE3_CMD} ${FORM_PATH}/${HELPER}.sqlite << EOF
 BEGIN TRANSACTION;
 INSERT INTO forms ( mytable,group_id,order_id,param,desc,def,cur,new,mandatory,attr,type,link,groupname ) VALUES ( "forms", 1,1,"bind","Bind: default is 0.0.0.0",'0.0.0.0','','',1, "maxlen=60", "inputbox", "bind_autocomplete", "" );
 INSERT INTO forms ( mytable,group_id,order_id,param,desc,def,cur,new,mandatory,attr,type,link,groupname ) VALUES ( "forms", 1,2,"port","Port: default is 6379. 0 - not listen on a TCP socket",'6379','','',1, "maxlen=60", "inputbox", "port_autocomplete", "" );
@@ -42,19 +42,19 @@ COMMIT;
 EOF
 
 # Put version
-/usr/local/bin/cbsd ${miscdir}/updatesql ${MYPATH}/${HELPER}.sqlite /usr/local/cbsd/share/forms_system.schema system
+/usr/local/bin/cbsd ${miscdir}/updatesql ${FORM_PATH}/${HELPER}.sqlite /usr/local/cbsd/share/forms_system.schema system
 
 # syslog_noyes
-/usr/local/bin/cbsd ${miscdir}/updatesql ${MYPATH}/${HELPER}.sqlite /usr/local/cbsd/share/forms_yesno.schema syslog_noyes
+/usr/local/bin/cbsd ${miscdir}/updatesql ${FORM_PATH}/${HELPER}.sqlite /usr/local/cbsd/share/forms_yesno.schema syslog_noyes
 
 # autocomplete
-/usr/local/bin/cbsd ${miscdir}/updatesql ${MYPATH}/${HELPER}.sqlite /usr/local/cbsd/share/forms_yesno.schema bind_autocomplete
-/usr/local/bin/cbsd ${miscdir}/updatesql ${MYPATH}/${HELPER}.sqlite /usr/local/cbsd/share/forms_yesno.schema port_autocomplete
+/usr/local/bin/cbsd ${miscdir}/updatesql ${FORM_PATH}/${HELPER}.sqlite /usr/local/cbsd/share/forms_yesno.schema bind_autocomplete
+/usr/local/bin/cbsd ${miscdir}/updatesql ${FORM_PATH}/${HELPER}.sqlite /usr/local/cbsd/share/forms_yesno.schema port_autocomplete
 
-/usr/local/bin/cbsd ${miscdir}/updatesql ${MYPATH}/${HELPER}.sqlite /usr/local/cbsd/share/forms_yesno.schema log_level
+/usr/local/bin/cbsd ${miscdir}/updatesql ${FORM_PATH}/${HELPER}.sqlite /usr/local/cbsd/share/forms_yesno.schema log_level
 
 # Autocomplete
-/usr/local/bin/sqlite3 ${MYPATH}/${HELPER}.sqlite << EOF
+${SQLITE3_CMD} ${FORM_PATH}/${HELPER}.sqlite << EOF
 BEGIN TRANSACTION;
 INSERT INTO bind_autocomplete ( text, order_id ) VALUES ( '0.0.0.0', 1 );
 INSERT INTO bind_autocomplete ( text, order_id ) VALUES ( '127.0.0.1', 2 );
@@ -62,7 +62,7 @@ COMMIT;
 EOF
 
 # Autocomplete
-/usr/local/bin/sqlite3 ${MYPATH}/${HELPER}.sqlite << EOF
+${SQLITE3_CMD} ${FORM_PATH}/${HELPER}.sqlite << EOF
 BEGIN TRANSACTION;
 INSERT INTO port_autocomplete ( text, order_id ) VALUES ( '6379', 1 );
 INSERT INTO port_autocomplete ( text, order_id ) VALUES ( '0', 2 );
@@ -70,7 +70,7 @@ COMMIT;
 EOF
 
 # Autocomplete
-/usr/local/bin/sqlite3 ${MYPATH}/${HELPER}.sqlite << EOF
+${SQLITE3_CMD} ${FORM_PATH}/${HELPER}.sqlite << EOF
 BEGIN TRANSACTION;
 INSERT INTO log_level ( text, order_id ) VALUES ( 'debug', 1 );
 INSERT INTO log_level ( text, order_id ) VALUES ( 'verbose', 2 );
@@ -80,7 +80,7 @@ COMMIT;
 EOF
 
 # Put boolean for syslog_noyes
-/usr/local/bin/sqlite3 ${MYPATH}/${HELPER}.sqlite << EOF
+${SQLITE3_CMD} ${FORM_PATH}/${HELPER}.sqlite << EOF
 BEGIN TRANSACTION;
 INSERT INTO syslog_noyes ( text, order_id ) VALUES ( "no", 1 );
 INSERT INTO syslog_noyes ( text, order_id ) VALUES ( "yes", 0 );
@@ -88,7 +88,7 @@ COMMIT;
 EOF
 
 # Put boolean for syslog_noyes
-/usr/local/bin/sqlite3 ${MYPATH}/${HELPER}.sqlite << EOF
+${SQLITE3_CMD} ${FORM_PATH}/${HELPER}.sqlite << EOF
 BEGIN TRANSACTION;
 CREATE TABLE memory_policy_select ( id INTEGER PRIMARY KEY AUTOINCREMENT, text TEXT DEFAULT NULL, order_id INTEGER DEFAULT 0 );
 INSERT INTO memory_policy_select ( text, order_id ) VALUES ( "volatile-lru", 5 );
@@ -100,14 +100,14 @@ INSERT INTO memory_policy_select ( text, order_id ) VALUES ( "noeviction", 0 );
 COMMIT;
 EOF
 
-/usr/local/bin/sqlite3 ${MYPATH}/${HELPER}.sqlite << EOF
+${SQLITE3_CMD} ${FORM_PATH}/${HELPER}.sqlite << EOF
 BEGIN TRANSACTION;
 INSERT INTO system ( helpername, version, packages, have_restart ) VALUES ( "redis", "201607", "databases/redis", "service redis restart" );
 COMMIT;
 EOF
 
 # long description
-/usr/local/bin/sqlite3 ${MYPATH}/${HELPER}.sqlite << EOF
+${SQLITE3_CMD} ${FORM_PATH}/${HELPER}.sqlite << EOF
 BEGIN TRANSACTION;
 UPDATE system SET longdesc='\
 Redis is an open source, advanced key-value store.  It is often referred \
